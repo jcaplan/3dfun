@@ -14,29 +14,53 @@ public class Calculations {
 		
 	}
 
-	public static Point intersectionLineAndPlane(Line l, Plane p){
+	static double x0;
+	static double y0;
+	static double z0;
+	
+	static Vector gradient;
+	static double dx;
+	static double dy;
+	static double dz;
+	
+	static double A;
+	static double B;
+	static double C;
+	static double D;
+	
+	
+	static double t;
+	
+	public static Point intersectionLineAndPlane(Line l, Plane plane){
+		Point p = new Point(0,0,0);
+		intersectionLineAndPlane(l, plane, p);
+		return p;
+	}
+
+			
+	public static void intersectionLineAndPlane(Line l, Plane plane, Point point){
 		
-		double x0 = l.getStartPoint().getx();
-		double y0 = l.getStartPoint().gety();
-		double z0 = l.getStartPoint().getz();
+		x0 = l.getStartPoint().getx();
+		y0 = l.getStartPoint().gety();
+		z0 = l.getStartPoint().getz();
 		
-		Vector gradient = l.getComponents();
-		double dx = gradient.getx();
-		double dy = gradient.gety();
-		double dz = gradient.getz();
+		gradient = l.getComponents();
+		dx = gradient.getx();
+		dy = gradient.gety();
+		dz = gradient.getz();
 		
-		double A = p.getA();
-		double B = p.getB();
-		double C = p.getC();
-		double D = p.getD();
+		A = plane.getA();
+		B = plane.getB();
+		C = plane.getC();
+		D = plane.getD();
 		
 		
-		double t = (A*x0 + B*y0 + C*z0 + D) / -(A*dx + B*dy + C*dz);
+		t = (A*x0 + B*y0 + C*z0 + D) / -(A*dx + B*dy + C*dz);
 		//System.out.println(slopeZ*t);
 		
-		Point i = new Point(x0 + dx*t, y0+dy*t, z0+dz*t);
 		
-		return i;
+		point.set(x0 + dx*t, y0+dy*t, z0+dz*t);
+		
 	}
 	
 }

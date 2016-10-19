@@ -1,7 +1,19 @@
 package geometry;
 
-public class Point implements Comparable{
+import java.util.Comparator;
 
+public class Point implements Comparable<Object>{
+
+	public static final Comparator<Point> sortByIncreasingX = new Comparator<Point>() {
+		@Override
+		public int compare(Point arg0, Point arg1) {
+			return Double.compare(arg0.getx(),arg1.getx());
+		}
+			
+	};
+	
+	
+	
 	double[] point;
 	
 	
@@ -73,6 +85,12 @@ public class Point implements Comparable{
 		point[1] += dy;
 		point[2] += dz;
 	}
+	
+	public void move(Point dir) {
+		point[0] += dir.getx();
+		point[1] += dir.gety();
+		point[2] += dir.getz();
+	}
 
 	public void rotate(Vector rot) {
 		rotate(rot.getx(),rot.gety(),rot.getz());	
@@ -109,7 +127,7 @@ public class Point implements Comparable{
 			y = yy;
 			
 			xx = x*cosine - y*sine;
-			yy = x*sine + y*cosine;
+				yy = x*sine + y*cosine;
 			
 			setx(xx);
 			sety(yy);
@@ -117,10 +135,10 @@ public class Point implements Comparable{
 	}
 
 
-	public void set(Point camera) {
-		setx(camera.getx());
-		sety(camera.gety());
-		setz(camera.getz());
+	public void set(Point p) {
+		setx(p.getx());
+		sety(p.gety());
+		setz(p.getz());
 	}
 
 
@@ -137,6 +155,9 @@ public class Point implements Comparable{
 		}
 		return 0;
 	}
+
+
+
 
 
 	

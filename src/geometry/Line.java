@@ -95,5 +95,10 @@ public class Line {
 		double z = (getStartPoint().getz() + getEndPoint().getz()) / 2;
 		return new Point(x,y,z);
 	}
+
+	public void setPoints(Point p1, Point p2) {
+		points[0].set(p1);
+		points[1].set(p2);
+	}
 	
 }

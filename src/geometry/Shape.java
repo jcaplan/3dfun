@@ -1,18 +1,31 @@
 package geometry;
 
+import graphics.Texture;
+
+import java.awt.Color;
 import java.util.ArrayList;
-import java.util.Collection;
 
 public abstract class Shape {
 
 	public abstract void updateShape();
 	public abstract void initPointsAndLines();
 	
+	private Texture texture;
+	private Color color;
 	Point[] points;
 	Line[] lines;
 	Point position = new Point(0,0,0);
 	Vector rotation = new Vector();
 
+	
+	public boolean hasTexture() {
+		return texture != null;
+	}
+	
+	public boolean hasColour() {
+		return color != null;
+	}
+	
 	
 	public Line[] getlines() {
 		return lines;
@@ -52,6 +65,10 @@ public abstract class Shape {
 		rotation.set(thetax,thetay,thetaz);
 	}
 	
+	public void setRotationDeg(double degx, double degy, double degz) {
+		rotation.set(Math.toRadians(degx), Math.toRadians(degy), Math.toRadians(degz));
+	}
+	
 	public ArrayList<Line> translate() {
 		ArrayList<Line> translated = new ArrayList<>();
 		System.out.println(position);
@@ -79,4 +96,15 @@ public abstract class Shape {
 		return result;
 	}
 
+	public void setTexture(Texture t) {
+		texture = t;
+	}
+	
+	public void setColor(Color c) {
+		color = c;
+	}
+	
+	public Color getColor(){
+		return color;
+	}
 }

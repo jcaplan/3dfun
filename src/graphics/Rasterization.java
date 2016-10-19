@@ -2,15 +2,15 @@ package graphics;
 
 import geometry.Calculations;
 import geometry.Line;
+import geometry.Panel;
 import geometry.Plane;
 import geometry.Point;
 import geometry.Shape;
 import geometry.Vector;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
-
+import java.awt.Color;
 
 public class Rasterization extends Render {
 
@@ -25,24 +25,153 @@ public class Rasterization extends Render {
 
 		clearPixels();
 
-		try {
-			Texture floor = new Texture("textures/floor.png");
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 
 	public void render(Collection<Shape> shapes) {
 		for (Shape shape : shapes){
-			render(shape);
+			if (shape.hasTexture())
+				renderTexture(shape);
+			else  if (shape.hasColour())
+				renderColor(shape);
+			else
+				renderOutline(shape);
 		}
 	}
 	
-	public void render(Shape shape){
+	private Point getProjectedPoint(Point p) {
+		return getProjectedPoint(new Line(p,camera));
+	}
+	
+	private Point getProjectedPoint(Line l){
+		return Calculations.intersectionLineAndPlane(l, screenPlane);
+	}
+	
+	Point newpoint = new Point(0,0,0);
+	Line l = new Line(0,0,0,0,0,0);
+	Point screenpoint = new Point(0,0,0);
+	Color c = new Color(0);
+	private void renderColor(Shape shape) {
+		
+		// Determine the 4 projected corners and then loop through setting color
+		assert(shape instanceof Panel);
+		Panel panel = (Panel) shape;
+		Point[] tPoints = panel.getTransformedPoints();
+		float[] colors = new float[4];
+		Plane p = new Plane(tPoints);
+		Point[] points = new Point[tPoints.length];
+		for (int i = 0; i < points.length; i++){
+			
+			points[i] = getProjectedPoint(tPoints[i]);
+			//offset world origin to screen origin
+			points[i].move(width/2, height/2, 0);
+		}
+
+		int xStart = getLowestX(points);
+		int xEnd = getHighestX(points);
+		int yStart, yEnd;
+		orderPointsTLBLTRBR(points);
+		
+		
+		for (int x = xStart; x < xEnd; x++){
+			
+			yStart = getYValueForLine(points[1],points[3], x);
+			yEnd = getYValueForLine(points[0],points[2], x);
+			
+			//y start is the line BL -> BR for x
+			for(int y = yStart; y < yEnd; y++){
+				screenpoint.set(x - width/2,y-width/2,0);
+				l.setPoints(screenpoint, camera);
+				Calculations.intersectionLineAndPlane(l, p, newpoint);
+
+				double brightness = (2100 - newpoint.getz())/ 3200.0;
+//
+				if (brightness < 0) {
+					brightness = 0;
+				}
+				if (brightness > 1) {
+					brightness = 1;
+				}
+				shape.getColor().getRGBColorComponents(colors);
+				
+				for(int i = 0; i < 3; i++){
+					colors[i] = (float) (colors[i] * brightness);
+				}
+				int rgb = new Color(colors[0],colors[1],colors[2]).getRGB();
+				drawPixel(x,y,rgb);
+			}
+		}
+
+	}
+
+	private double getDistance(Point p1, Point p2) {
+		return Math.sqrt(Math.pow(p1.getx() - p2.getx(), 2) +
+				Math.pow(p1.gety() - p2.gety(), 2));
+	}
+
+	private Point getIntersection(double[] l1, double[] l2) {
+		double x = (l2[1] - l1[1]) / (l1[0] - l2[0]);
+		double y = l1[0]*x + l1[1];
+		return new Point(x,y,0);
+	}
+
+	private double[] getLineParameters(Point p1, Point p2) {
+		double[] params = new double[2];
+		double slope = (p2.gety() - p1.gety()) / (p2.getx() - p1.getx());
+		double intercept = p1.gety() - slope * p1.getx();
+		params[0] = slope;
+		params[1] = intercept;
+		return params;
+	}
+
+	private int getYValueForLine(Point p1, Point p2, int x) {
+		double slope = (p2.gety() - p1.gety()) / (p2.getx() - p1.getx());
+		double intercept = p1.gety() - slope * p1.getx();
+		
+		int y = (int)((slope * x) + intercept);
+		return y;
+	}
+
+	private int getHighestX(Point[] points) {
+		int highestX = Integer.MIN_VALUE;
+		for (Point p : points){
+			int x = (int) p.getx();
+			if (x > highestX) {
+				highestX = x;
+			}
+		}
+		return highestX;
+	}
+
+	private int getLowestX(Point[] points) {
+		int lowestX = Integer.MAX_VALUE;
+		for (Point p : points){
+			int x = (int) p.getx();
+			if (x < lowestX) {
+				lowestX = x;
+			}
+		}
+		return lowestX;
+	}
+
+	private void orderPointsTLBLTRBR(Point[] points) {
+		//top left bottom left top right bottom right
+		Arrays.sort(points, Point.sortByIncreasingX);
+		for(int i = 0; i < 4; i+= 2){
+			//sort top 2 and bottom 2 by y
+			if( points[i].gety() < points[i + 1].gety()){
+				Point temp = points[i];
+				points[i] = points[i + 1];
+				points[i + 1] = temp;
+			}
+		}
+	}
+
+	private void renderTexture(Shape shape) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void renderOutline(Shape shape){
 		render(shape, BLACK);
 	}
 	
@@ -58,8 +187,8 @@ public class Rasterization extends Render {
 			}
 			
 			Line projected = new Line(
-					Calculations.intersectionLineAndPlane(startLine, screenPlane),
-					Calculations.intersectionLineAndPlane(endLine, screenPlane)		
+					getProjectedPoint(startLine),
+					getProjectedPoint(endLine)		
 					);
 			//offset world origin to screen origin
 			projected.move(width/2, height/2, 0);
@@ -120,55 +249,10 @@ public class Rasterization extends Render {
 			}
 		}
 	}
-
-	public void drawCircle(int xCenter, int yCenter, int radius) {
-		for (int x = 0, y = radius, dec = 3 - 2 * radius; x <= y; x++) {
-			drawPixel(xCenter + x, yCenter + y);
-			drawPixel(xCenter + x, yCenter - y);
-			drawPixel(xCenter - x, yCenter + y);
-			drawPixel(xCenter - x, yCenter - y);
-			drawPixel(xCenter + y, yCenter + x);
-			drawPixel(xCenter + y, yCenter - x);
-			drawPixel(xCenter - y, yCenter + x);
-			drawPixel(xCenter - y, yCenter - x);
-
-			if (dec >= 0) {
-				dec += -4 * (y--) + 4;
-			}
-
-			dec += 4 * x + 6;
-		}
-	}
-
-	public void drawEllipse(int xCenter, int yCenter, int a, int b) {
-		int a2 = a * a, b2 = b * b, fa2 = 4 * a2, fb2 = 4 * b2;
-		for (int x = 0, y = b, sigma = 2 * b2 + a2 * (1 - 2 * b); b2 * x <= a2 * y; x++) {
-			drawPixel(xCenter + x, yCenter + y);
-			drawPixel(xCenter - x, yCenter + y);
-			drawPixel(xCenter + x, yCenter - y);
-			drawPixel(xCenter - x, yCenter - y);
-
-			if (sigma >= 0) {
-				sigma += fa2 * (1 - (y--));
-			}
-			sigma += b2 * (4 * x + 6);
-
-		}
-		for (int x = a, y = 0, sigma = 2 * a2 + b2 * (1 - 2 * a); a2 * y <= b2 * x; y++) {
-			drawPixel(xCenter + x, yCenter + y);
-			drawPixel(xCenter - x, yCenter + y);
-			drawPixel(xCenter + x, yCenter - y);
-			drawPixel(xCenter - x, yCenter - y);
-
-			if (sigma >= 0) {
-				sigma += fb2 * (1 - x);
-				x--;
-			}
-			sigma += a2 * (4 * y + 6);
-
-		}
-	}
 	
+	public void draw(Panel panel){
+		
+	}
 
 	public void setPerspective(Point camera, Plane screenPlane) {
 		this.camera = camera;

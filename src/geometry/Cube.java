@@ -10,7 +10,6 @@ public class Cube extends Shape{
 		this.length = length;
 		initPointsAndLines();
 		setPosition(xCenter, yCenter, zCenter);
-		updateShape();		
 	}
 	@Override
 	public void updateShape() {
